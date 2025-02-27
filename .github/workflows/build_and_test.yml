@@ -38,16 +38,9 @@ jobs:
       - name: Check out our code
         uses: actions/checkout@v4
 
-      - name: Cache build subdir (for release, below)
-        id: cache-build
-        uses: actions/cache@v4
-        with:
-          path: build/
-          key: ${{ runner.os }}-build
-
       - name: cmake and make
         run: |
-          mkdir -p build/
+          mkdir build/
           cd build/
           cmake ..
           make
@@ -63,6 +56,31 @@ jobs:
           cd build/
           ctest -VV --timeout 10 ..
 
+      - name: Cache a package dir for releases, below
+        id: cache-package
+        uses: actions/cache@v4
+        with:
+          path: ./build/package/
+          key: ${{ runner.os }}-${{ runner.arch }}-package
+
+      - name: Install dserv to a local subdir
+        run: |
+          cd build/
+          cmake -DCMAKE_INSTALL_PREFIX=./package/usr/local ..
+          cmake --build .
+          cmake --install .
+
+      - name: Add dlsh to the install package
+        run: |
+          mkdir ./build/package/usr/local/dlsh/
+          cp ./dlsh/dlsh.zip ./build/package/usr/local/dlsh/
+
+      - name: Add dpkg metadata and service install script to the install package
+        run: |
+          mkdir -p ./build/package/DEBIAN
+          cp dpkg/control ./build/package/DEBIAN/
+          cp dpkg/postinst ./build/package/DEBIAN/
+
   release:
 
     runs-on: ubuntu-latest
@@ -71,47 +89,17 @@ jobs:
 
     steps:
 
-      - name: Restore build subdir (from build, above)
-        id: cache-build-restore
+      - name: Restore package subdir from the build
+        id: cache-package-restore
         uses: actions/cache/restore@v4
         with:
-          path: build/
-          key: ${{ runner.os }}-build
-
-      - name: Install to a local subdir
-        run: |
-          cd build/
-          cmake -DCMAKE_INSTALL_PREFIX=./package/usr/local ..
-          cmake --build .
-          cmake --install .
-
-      - name: Add dlsh to the install subdir
-        run: |
-          mkdir ./build/package/usr/local/dlsh/
-          cd ./build/package/usr/local/dlsh/
-          wget https://sheinberglab.org/dserv/dlsh.zip
-
-      - name: Create Debian control file
-        run: |
-          mkdir -p ./build/package/DEBIAN
-          echo "Package: dserv" > ./build/package/DEBIAN/control
-          echo "Description: Data server system for data acquisition and control" >> ./build/package/DEBIAN/control
-          echo "Maintainer: Sheinberg Lab" >> ./build/package/DEBIAN/control
-          echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
-          echo "Architecture: amd64" >> ./build/package/DEBIAN/control
-          echo "Depends: libevdev2, libpq5" >> ./build/package/DEBIAN/control
-
-      - name: Create postinst script
-        run: |
-          echo '#!/bin/sh' > ./build/package/DEBIAN/postinst
-          echo "set -e" >> ./build/package/DEBIAN/postinst
-          echo "cp /usr/local/dserv/systemd/dserv.service /etc/systemd/system" >> ./build/package/DEBIAN/postinst
-          echo "systemctl daemon-reload" >> ./build/package/DEBIAN/postinst
-          echo "systemctl enable dserv" >> ./build/package/DEBIAN/postinst
-          echo "systemctl start dserv" >> ./build/package/DEBIAN/postinst
-          chmod +x ./build/package/DEBIAN/postinst
+          path: ./build/package/
+          key: ${{ runner.os }}-${{ runner.arch }}-package
 
       - name: Create Debian package
         run: |
+          echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
+          echo "Architecture: $(dpkg --print-architecture)" >> ./build/package/DEBIAN/control
+          chmod +x ./build/package/DEBIAN/postinst
           dpkg-deb --build ./build/package dserv-${{ github.ref_name }}.deb
           ls -alth
