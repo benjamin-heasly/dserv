@@ -62,6 +62,7 @@ jobs:
         with:
           path: ./build/package/
           key: ${{ runner.os }}-${{ runner.arch }}-package
+          lookup-only: true
 
       - name: Install dserv to a local subdir
         run: |
