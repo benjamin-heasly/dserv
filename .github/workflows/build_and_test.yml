@@ -37,7 +37,14 @@ jobs:
 
       - name: Check out our code
         uses: actions/checkout@v4
-  
+
+      - name: Cache build subdir (for release, below)
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: build/
+          key: ${{ runner.os }}-build
+
       - name: cmake and make
         run: |
           mkdir build/
@@ -64,6 +71,13 @@ jobs:
 
     steps:
 
+      - name: Restore build subdir (from build, above)
+        id: cache-build-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: build/
+          key: ${{ runner.os }}-build
+
       - name: Install to a local subdir
         run: |
           cd build/
@@ -74,7 +88,8 @@ jobs:
       - name: Add dlsh to the install subdir
         run: |
           mkdir ./build/package/usr/local/dlsh/
-          cp ./dlsh/dlsh.zip ./build/package/usr/local/dlsh/
+          cd ./build/package/usr/local/dlsh/
+          wget https://sheinberglab.org/dserv/dlsh.zip
 
       - name: Create Debian control file
         run: |
