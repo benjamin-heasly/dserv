@@ -55,3 +55,14 @@ jobs:
         run: |
           cd build/
           ctest -VV --timeout 10 ..
+
+  release:
+
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+
+    steps:
+
+      - name: "Test tags only"
+        run: echo "This only runs on tags?"
