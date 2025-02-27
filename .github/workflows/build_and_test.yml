@@ -64,5 +64,39 @@ jobs:
 
     steps:
 
-      - name: "Test tags only"
-        run: echo "This only runs on tags?"
+      - name: Install to a local subdir
+        run: |
+          cd build/
+          cmake -DCMAKE_INSTALL_PREFIX=./package/usr/local ..
+          cmake --build .
+          cmake --install .
+
+      - name: Add dlsh to the install subdir
+        run: |
+          mkdir ./build/package/usr/local/dlsh/
+          cp ./dlsh/dlsh.zip ./build/package/usr/local/dlsh/
+
+      - name: Create Debian control file
+        run: |
+          mkdir -p ./build/package/DEBIAN
+          echo "Package: dserv" > ./build/package/DEBIAN/control
+          echo "Description: Data server system for data acquisition and control" >> ./build/package/DEBIAN/control
+          echo "Maintainer: Sheinberg Lab" >> ./build/package/DEBIAN/control
+          echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
+          echo "Architecture: amd64" >> ./build/package/DEBIAN/control
+          echo "Depends: libevdev2, libpq5" >> ./build/package/DEBIAN/control
+
+      - name: Create postinst script
+        run: |
+          echo '#!/bin/sh' > ./build/package/DEBIAN/postinst
+          echo "set -e" >> ./build/package/DEBIAN/postinst
+          echo "cp /usr/local/dserv/systemd/dserv.service /etc/systemd/system" >> ./build/package/DEBIAN/postinst
+          echo "systemctl daemon-reload" >> ./build/package/DEBIAN/postinst
+          echo "systemctl enable dserv" >> ./build/package/DEBIAN/postinst
+          echo "systemctl start dserv" >> ./build/package/DEBIAN/postinst
+          chmod +x ./build/package/DEBIAN/postinst
+
+      - name: Create Debian package
+        run: |
+          dpkg-deb --build ./build/package dserv-${{ github.ref_name }}.deb
+          ls -alth
