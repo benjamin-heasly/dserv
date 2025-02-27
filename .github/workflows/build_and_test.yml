@@ -47,7 +47,7 @@ jobs:
 
       - name: cmake and make
         run: |
-          mkdir build/
+          mkdir -p build/
           cd build/
           cmake ..
           make
