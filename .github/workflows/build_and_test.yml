@@ -77,7 +77,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-package
           lookup-only: true
 
-      - name: Install dserv to a local subdir
+      - name: Install dserv to a local subdir for packaging
         run: |
           cd build/
           cmake -DCMAKE_INSTALL_PREFIX=./package/usr/local ..
@@ -89,11 +89,15 @@ jobs:
           mkdir ./build/package/usr/local/dlsh/
           cp ./dlsh/dlsh.zip ./build/package/usr/local/dlsh/
 
-      - name: Add dpkg metadata and service install script to the install package
+      - name: Add dpkg metadata the install package
         run: |
           mkdir -p ./build/package/DEBIAN
           cp dpkg/control ./build/package/DEBIAN/
-          cp dpkg/postinst ./build/package/DEBIAN/
+
+      - name: Add service installation script to the install package
+        run: |
+          cp dpkg/install-dserv-service.sh ./build/package/usr/local/bin/
+          chmod +x ./build/package/usr/local/bin/install-dserv-service.sh
 
   release:
 
@@ -117,6 +121,5 @@ jobs:
           # echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
           echo "Version: 0.0.test" >> ./build/package/DEBIAN/control
           echo "Architecture: $(dpkg --print-architecture)" >> ./build/package/DEBIAN/control
-          chmod +x ./build/package/DEBIAN/postinst
           dpkg-deb --build ./build/package dserv-${{ github.ref_name }}.deb
           ls -alth
