@@ -120,11 +120,11 @@ jobs:
         run: |
           echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
           echo "Architecture: $(dpkg --print-architecture)" >> ./build/package/DEBIAN/control
-          dpkg-deb --build ./build/package dserv-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}.deb
+          dpkg-deb --build ./build/package dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
 
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: ./build/package/*.deb
-          body: dserv for ${{ runner.os }} (${{ runner.arch }}), version ${{ github.ref_name }}
+          artifacts: ./*.deb
+          body: dserv for ${{ runner.os }} $(dpkg --print-architecture), version ${{ github.ref_name }}
           generateReleaseNotes: true
