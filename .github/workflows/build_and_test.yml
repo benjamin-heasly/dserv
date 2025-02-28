@@ -102,9 +102,10 @@ jobs:
   release:
 
     runs-on: ubuntu-latest
-    # For dev iterating, build the release package every time.
-    # if: startsWith(github.ref, 'refs/tags/')
     needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
 
     steps:
 
@@ -117,9 +118,13 @@ jobs:
 
       - name: Create Debian package
         run: |
-          # For dev iterating, use a fixed version number.
-          # echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
-          echo "Version: 0.0.test" >> ./build/package/DEBIAN/control
+          echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
           echo "Architecture: $(dpkg --print-architecture)" >> ./build/package/DEBIAN/control
-          dpkg-deb --build ./build/package dserv-${{ github.ref_name }}.deb
-          ls -alth
+          dpkg-deb --build ./build/package dserv-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}.deb
+
+      - name: Create GitHub release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: ./build/package dserv-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}.deb
+          body: dserv for ${{ runner.os }} (${{ runner.arch }}), version ${{ github.ref_name }}
+          generateReleaseNotes: true
