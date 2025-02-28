@@ -89,7 +89,7 @@ jobs:
           mkdir ./build/package/usr/local/dlsh/
           cp ./dlsh/dlsh.zip ./build/package/usr/local/dlsh/
 
-      - name: Add dpkg metadata the install package
+      - name: Add dpkg metadata to the install package
         run: |
           mkdir -p ./build/package/DEBIAN
           cp dpkg/control ./build/package/DEBIAN/
@@ -115,6 +115,14 @@ jobs:
         with:
           path: ./build/package/
           key: ${{ runner.os }}-${{ runner.arch }}-package
+
+      - name: Build and install tcl 9 dynamic lib
+        run: |
+          git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git
+          cd tcl/unix/
+          ./configure --prefix=./build/package/usr/local/dserv/tcl/
+          make
+          sudo make install
 
       - name: Create Debian package
         run: |
