@@ -51,6 +51,19 @@ jobs:
           cd dlsh/
           wget https://sheinberglab.org/dserv/dlsh.zip
 
+      - name: Build x86_64 sqlite lib for dlish (temporary, until dlsh has its own ci build)
+        run: |
+          git clone https://github.com/sqlite/sqlite.git
+          cd sqlite
+          git checkout version-3.47.2
+          ./configure --enable-all --with-tclsh=/usr/local/bin/tclsh9.0
+          make tclextension
+
+          cd ../dlsh/
+          mkdir -p lib/sqlite/Linux/x86_64/
+          cp ../sqlite/libtcl9sqlite3.47.2.so ./lib/sqlite/Linux/x86_64/
+          zip dlsh.zip ./lib/sqlite/Linux/x86_64/libtcl9sqlite3.47.2.so
+
       - name: ctest
         run: |
           cd build/
@@ -85,7 +98,8 @@ jobs:
   release:
 
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    # For dev iterating, build the release package every time.
+    # if: startsWith(github.ref, 'refs/tags/')
     needs: build
 
     steps:
@@ -99,7 +113,9 @@ jobs:
 
       - name: Create Debian package
         run: |
-          echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
+          # For dev iterating, use a fixed version number.
+          # echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
+          echo "Version: 0.0.test" >> ./build/package/DEBIAN/control
           echo "Architecture: $(dpkg --print-architecture)" >> ./build/package/DEBIAN/control
           chmod +x ./build/package/DEBIAN/postinst
           dpkg-deb --build ./build/package dserv-${{ github.ref_name }}.deb
