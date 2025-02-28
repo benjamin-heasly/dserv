@@ -126,5 +126,5 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: ./*.deb
-          body: dserv for ${{ runner.os }} $(dpkg --print-architecture), version ${{ github.ref_name }}
+          body: dserv for ${{ runner.os }} ${{ runner.arch }}, version ${{ github.ref_name }}
           generateReleaseNotes: true
