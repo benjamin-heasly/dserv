@@ -125,6 +125,6 @@ jobs:
       - name: Create GitHub release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: ./build/package dserv-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}.deb
+          artifacts: ./build/package/*.deb
           body: dserv for ${{ runner.os }} (${{ runner.arch }}), version ${{ github.ref_name }}
           generateReleaseNotes: true
