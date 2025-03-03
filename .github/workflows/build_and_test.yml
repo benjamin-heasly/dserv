@@ -10,7 +10,7 @@ jobs:
 
     steps:
 
-      - name: Install package dependencies
+      - name: Install build dependencies
         run: |
           sudo apt install -y build-essential cmake
           sudo apt install -y libevdev-dev
@@ -49,90 +49,9 @@ jobs:
         run: |
           mkdir dlsh/
           cd dlsh/
-          wget https://sheinberglab.org/dserv/dlsh.zip
-
-      - name: Build x86_64 sqlite lib for dlish (temporary, until dlsh has its own ci build)
-        run: |
-          git clone https://github.com/sqlite/sqlite.git
-          cd sqlite
-          git checkout version-3.47.2
-          ./configure --enable-all --with-tclsh=/usr/local/bin/tclsh9.0
-          make tclextension
-
-          cd ../dlsh/
-          mkdir -p lib/sqlite/Linux/x86_64/
-          cp ../sqlite/libtcl9sqlite3.47.2.so ./lib/sqlite/Linux/x86_64/
-          zip dlsh.zip ./lib/sqlite/Linux/x86_64/libtcl9sqlite3.47.2.so
+          wget https://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zip
 
       - name: ctest
         run: |
           cd build/
           ctest -VV --timeout 10 ..
-
-      - name: Cache a package dir for releases, below
-        id: cache-package
-        uses: actions/cache@v4
-        with:
-          path: ./build/package/
-          key: ${{ runner.os }}-${{ runner.arch }}-package
-          lookup-only: true
-
-      - name: Install dserv to a local subdir for packaging
-        run: |
-          cd build/
-          cmake -DCMAKE_INSTALL_PREFIX=./package/usr/local ..
-          cmake --build .
-          cmake --install .
-
-      - name: Add dlsh to the install package
-        run: |
-          mkdir ./build/package/usr/local/dlsh/
-          cp ./dlsh/dlsh.zip ./build/package/usr/local/dlsh/
-
-      - name: Add dpkg metadata to the install package
-        run: |
-          mkdir -p ./build/package/DEBIAN
-          cp dpkg/control ./build/package/DEBIAN/
-
-      - name: Add service installation script to the install package
-        run: |
-          cp dpkg/install-dserv-service.sh ./build/package/usr/local/bin/
-          chmod +x ./build/package/usr/local/bin/install-dserv-service.sh
-
-  release:
-
-    runs-on: ubuntu-22.04
-    needs: build
-    if: startsWith(github.ref, 'refs/tags/')
-    permissions:
-      contents: write
-
-    steps:
-
-      - name: Restore package subdir from the build
-        id: cache-package-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: ./build/package/
-          key: ${{ runner.os }}-${{ runner.arch }}-package
-
-      - name: Build and install tcl 9 dynamic lib
-        run: |
-          git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git
-          cd tcl/unix/
-          ./configure --prefix=./build/package/usr/local/dserv/tcl/
-          make
-          sudo make install
-
-      - name: Create Debian package
-        run: |
-          echo "Version: ${{ github.ref_name }}" >> ./build/package/DEBIAN/control
-          echo "Architecture: $(dpkg --print-architecture)" >> ./build/package/DEBIAN/control
-          dpkg-deb --build ./build/package dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
-
-      - name: Create GitHub release
-        uses: ncipollo/release-action@v1
-        with:
-          artifacts: ./*.deb
-          body: dserv for ${{ runner.os }} ${{ runner.arch }}, version ${{ github.ref_name }}
-          generateReleaseNotes: true

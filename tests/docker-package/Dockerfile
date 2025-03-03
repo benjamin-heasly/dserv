@@ -1,26 +1,24 @@
 # This runs in an Ubuntu environment.
+# Use 22.04 for compatibility (eg version of stdlibc++)
 FROM ubuntu:22.04
 
+# Set up a build environment.
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt update \
-    && apt install --no-install-recommends --yes git wget ca-certificates build-essential cmake libevdev-dev zlib1g-dev zip \
+    && apt install --no-install-recommends --yes git wget ca-certificates build-essential cmake libevdev-dev zlib1g-dev \
     && apt-get clean \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/listhttps://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zips/*
 
-# TODO: I don't like installing tcl twice: once for build and once for package.
-# Get build to use the prefixed installation?
-# Or copy or link a subset of files?
+# Install TCL 9 to the build environment.
 WORKDIR /work
 RUN git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git \
   && cd tcl/unix/ \
-  && ./configure --prefix=/work/package/usr/local/dserv/tcl/ \
-  && make \
-  && make install \
   && ./configure \
   && make \
   && make install
 
+# Install jansson in the build environment.
 WORKDIR /work
 RUN git clone https://github.com/akheron/jansson.git \
   && cd jansson/ \
@@ -31,40 +29,40 @@ RUN git clone https://github.com/akheron/jansson.git \
   && make \
   && make install
 
-# TODO: get the installed dserv to locate packaged tcl at /work/package/usr/local/dserv/tcl
-# Possibly with LD_RUN_PATH='$ORIGIN/lib'
-# Or CMAKE_INSTALL_RPATH
+# Install dserv itself to the packaging directory.
 WORKDIR /work
 RUN git clone https://github.com/benjamin-heasly/dserv.git \
   && cd dserv \
   && git checkout ci-releases \
   && mkdir build \
   && cd build/ \
-  && cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local .. \
+  && cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local/ .. \
   && cmake --build . \
   && cmake --install .
 
+# Also install TCL 9 to the packaging directory.
+WORKDIR /work/tcl/unix/ \
+&& ./configure --prefix=/work/package/usr/local/ \
+&& make \
+&& make install
+
+# Install dlsh to the packaging directory.
 WORKDIR /work/package/usr/local/dlsh
 RUN wget https://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zip
 
-# TODO: I don't like installing dlsh twice: once for tests and once for package.
-# Point the tests at the package location?
-# Or will these end up being in separate jobs anyway?
-WORKDIR /work/dserv/build
-RUN mkdir /work/dserv/dlsh \
-  && cp /work/package/usr/local/dlsh/dlsh.zip /work/dserv/dlsh \
-  && ctest -VV --timeout 10 ..
-
+# Add debian package metadata and service install script to the packaging directory.
 WORKDIR /work/package/DEBIAN
 RUN cp /work/dserv/dpkg/control . \
   && cp /work/dserv/dpkg/install-dserv-service.sh . \
   && chmod +x ./install-dserv-service.sh
 
+# Dynamically add the package version and architecture, and build the package.
 WORKDIR /work
 RUN echo "Version: 0.0.test" >> /work/package/DEBIAN/control \
   && echo "Architecture: $(dpkg --print-architecture)" >> /work/package/DEBIAN/control \
   && dpkg-deb --build /work/package dserv-test.deb
 
+# For testing, install the package we just made.
 WORKDIR /work
 RUN export DEBIAN_FRONTEND=noninteractive \
 && apt update \
