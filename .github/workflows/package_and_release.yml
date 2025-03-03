@@ -97,6 +97,7 @@ jobs:
         run: |
           wget https://github.com/benjamin-heasly/dserv/releases/download/${{ github.ref_name }}/dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
           sudo apt install --yes ./dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
+          sudo ldconfig
 
       - name: Sanity check the installed package.
         run: |
