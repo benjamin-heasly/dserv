@@ -27,6 +27,13 @@ jobs:
           make
           sudo make install
 
+      - name: Install TCL 9 into the packaging dir.
+        run: |
+          cd tcl/unix/
+          ./configure --prefix=/tmp/package/usr/local/
+          make
+          make install
+
       - name: Install Jansson to the build environment.
         run: |
           git clone https://github.com/akheron/jansson.git
@@ -41,22 +48,13 @@ jobs:
       - name: Check out our dserv code for the current tag.
         uses: actions/checkout@v4
 
-      - name: Install dserv into a packaging dir.
+      - name: Install dserv into the packaging dir.
         run: |
           mkdir build/
           cd build/
           cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local/ ..
           cmake --build .
           cmake --install .
-
-      - name: Install TCL 9 into the packaging dir.
-        run: |
-          pwd
-          ls -alth
-          cd tcl/unix/
-          ./configure --prefix=/tmp/package/usr/local/
-          make
-          make install
 
       - name: Install dlsh into the packaging dir.
         run: |
