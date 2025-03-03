@@ -51,6 +51,8 @@ jobs:
 
       - name: Install TCL 9 into the packaging dir.
         run: |
+          pwd
+          ls -alth
           cd tcl/unix/
           ./configure --prefix=/tmp/package/usr/local/
           make
