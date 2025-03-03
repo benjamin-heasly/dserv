@@ -45,9 +45,9 @@ jobs:
         run: |
           mkdir build/
           cd build/
-          && cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local/ .. \
-          && cmake --build . \
-          && cmake --install .
+          cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local/ ..
+          cmake --build .
+          cmake --install .
 
       - name: Install TCL 9 into the packaging dir.
         run: |
