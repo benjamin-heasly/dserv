@@ -9,8 +9,12 @@ jobs:
 
   release:
 
-    # Build on not-the-latest-ubuntu to keep dependency versions modest -- eg libstdc++.
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        # Build on not-the-latest to keep dependency versions modest.
+        os: [ubuntu-22.04, ubuntu-22.04-arm]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
 
@@ -87,9 +91,14 @@ jobs:
 
   check:
 
-    # Run checks on a fresh runner, with no
-    runs-on: ubuntu-latest
     needs: release
+
+    strategy:
+      matrix:
+        # Check on latest to confirm compatibility.
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
+
+    runs-on: ${{ matrix.os }}
 
     steps:
         
