@@ -105,7 +105,7 @@ jobs:
         
       - name: Install the package we just released.
         run: |
-          wget https://github.com/benjamin-heasly/dserv/releases/download/${{ github.ref_name }}/dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
+          wget ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
           sudo apt install --yes ./dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
           sudo ldconfig
 
