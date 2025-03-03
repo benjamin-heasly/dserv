@@ -88,6 +88,7 @@ jobs:
           artifacts: ./*.deb
           body: dserv for ${{ runner.os }} ${{ runner.arch }}, version ${{ github.ref_name }}
           generateReleaseNotes: true
+          allowUpdates: true
 
   check:
 
