@@ -1,0 +1,106 @@
+name: Package and Release
+
+on:
+  push:
+    tags:        
+      - '*'
+
+jobs:
+
+  release:
+
+    # Build on not-the-latest-ubuntu to keep dependency versions modest -- eg libstdc++.
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      - name: Set up a build environment.
+        run: |
+          sudo apt install -y build-essential cmake
+          sudo apt install -y libevdev-dev
+
+      - name: Install TCL 9 to the build environment.
+        run: |
+          git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git
+          cd tcl/unix/
+          ./configure
+          make
+          sudo make install
+
+      - name: Install Jansson to the build environment.
+        run: |
+          git clone https://github.com/akheron/jansson.git
+          cd jansson/
+          git checkout v2.14
+          mkdir build/
+          cd build/
+          cmake ..
+          make
+          sudo make install
+
+      - name: Check out our dserv code for the current tag.
+        uses: actions/checkout@v4
+
+      - name: Install dserv into a packaging dir.
+        run: |
+          mkdir build/
+          cd build/
+          && cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local/ .. \
+          && cmake --build . \
+          && cmake --install .
+
+      - name: Install TCL 9 into the packaging dir.
+        run: |
+          cd tcl/unix/
+          ./configure --prefix=/tmp/package/usr/local/
+          make
+          make install
+
+      - name: Install dlsh into the packaging dir.
+        run: |
+          mkdir /tmp/package/usr/local/dlsh/
+          cd /tmp/package/usr/local/dlsh/
+          wget https://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zip
+
+      - name: Add dserv service installation script to the packaging dir.
+        run: |
+          cp dpkg/install-dserv-service.sh /tmp/package/usr/local/bin/
+          chmod +x /tmp/package/usr/local/bin/install-dserv-service.sh
+  
+      - name: Add .deb package metadata.
+        run: |
+          mkdir -p /tmp/package/DEBIAN
+          cp dpkg/control /tmp/package/DEBIAN/
+          echo "Version: ${{ github.ref_name }}" >> /tmp/package/DEBIAN//control
+          echo "Architecture: $(dpkg --print-architecture)" >> /tmp/package/DEBIAN/control
+  
+      - name: Build the .deb package with dserv and TCL 9.
+        run: |
+          dpkg-deb --build /tmp/package dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
+
+      - name: Create a GitHub release for the current tag and package.
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: ./*.deb
+          body: dserv for ${{ runner.os }} ${{ runner.arch }}, version ${{ github.ref_name }}
+          generateReleaseNotes: true
+
+  check:
+
+    # Run checks on a fresh runner, with no
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+        
+      - name: Install the package we just released.
+        run: |
+          wget https://github.com/benjamin-heasly/dserv/releases/download/${{ github.ref_name }}/dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
+          apt install --yes dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
+
+      - name: Sanity check the installed package.
+        run: |
+          echo "test-123" | essctrl && cat history.txt
+          /usr/local/dserv/dserv --help
+          timeout -k 3 2 /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
+          which install-dserv-service.sh
