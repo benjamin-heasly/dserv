@@ -77,7 +77,13 @@ jobs:
           cp dpkg/control /tmp/package/DEBIAN/
           echo "Version: ${{ github.ref_name }}" >> /tmp/package/DEBIAN//control
           echo "Architecture: $(dpkg --print-architecture)" >> /tmp/package/DEBIAN/control
-  
+
+      - name: Add .deb package post-install script.
+        run: |
+          mkdir -p /tmp/package/DEBIAN
+          cp dpkg/postinst /tmp/package/DEBIAN/
+          chmod +x /tmp/package/DEBIAN/postinst
+
       - name: Build the .deb package with dserv and TCL 9.
         run: |
           dpkg-deb --build /tmp/package dserv-${{ runner.os }}-$(dpkg --print-architecture)-${{ github.ref_name }}.deb
@@ -86,7 +92,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: ./*.deb
-          body: dserv for ${{ runner.os }} ${{ runner.arch }}, version ${{ github.ref_name }}
+          body: dserv version ${{ github.ref_name }}
           generateReleaseNotes: true
           allowUpdates: true
 
@@ -115,3 +121,4 @@ jobs:
           /usr/local/dserv/dserv --help
           timeout --preserve-status --signal SIGINT 2 /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
           which install-dserv-service.sh
+          ls -alth /usr/local/dserv/db

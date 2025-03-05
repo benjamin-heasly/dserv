@@ -65,6 +65,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 
 # docker run --rm -ti dserv:local /bin/sh -c 'echo "test" | essctrl && cat history.txt'
 # docker run --rm -ti dserv:local /usr/local/dserv/dserv --help
-# timeout -k 3 2 docker run --rm -ti dserv:local /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
-# docker run --rm -ti dserv:local /bin/sh ls -alth /usr/local/
-# docker run --rm -ti dserv:local /bin/sh ls -alth /usr/local/dserv/db
+# docker run --rm -ti dserv:local timeout --signal SIGINT 2 /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
+# docker run --rm -ti dserv:local ls -alth /usr/local/bin
+# docker run --rm -ti dserv:local ls -alth /usr/local/dserv/db
