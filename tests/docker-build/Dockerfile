@@ -6,7 +6,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt install --no-install-recommends --yes git wget ca-certificates build-essential cmake libevdev-dev zlib1g-dev zip \
     && apt-get clean \
     && apt-get autoremove \
-    && rm -rf /var/lib/apt/listhttps://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zips/*
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /work
 RUN git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git \
@@ -33,6 +33,35 @@ RUN git clone https://github.com/benjamin-heasly/dserv.git \
   && cd dserv \
   && git checkout ci-releases \
   && mkdir build \
+  && cd build/ \
+  && cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local .. \
+  && cmake --build . \
+  && cmake --install .
+
+RUN export DEBIAN_FRONTEND=noninteractive \
+  && apt update \
+  && apt install --no-install-recommends --yes libpango1.0-dev libwayland-dev wayland-protocols libxkbcommon-dev libxinerama-dev libdbus-1-dev libglew-dev  libdecor-0-dev libgtk-3-dev liblz4-dev libhpdf-dev \
+  && apt-get clean \
+  && apt-get autoremove \
+  && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /work
+RUN git clone https://github.com/fltk/fltk.git \
+  && cd fltk \
+  && git checkout release-1.4.2 \
+  && cmake -B build \
+  && cmake --build build \
+  && cmake --install build
+
+WORKDIR /work
+RUN git clone https://github.com/SheinbergLab/dlsh \
+  && cd dlsh \
+  && cmake -B build \
+  && cmake --build build \
+  && cmake --install build
+
+WORKDIR /work/dserv/tools/essgui
+RUN mkdir build \
   && cd build/ \
   && cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local .. \
   && cmake --build . \
