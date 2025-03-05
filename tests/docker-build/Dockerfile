@@ -8,9 +8,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/listhttps://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zips/*
 
-# TODO: I don't like installing tcl twice: once for build and once for package.
-# Get build to use the prefixed installation?
-# Or copy or link a subset of files?
 WORKDIR /work
 RUN git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git \
   && cd tcl/unix/ \
@@ -31,9 +28,6 @@ RUN git clone https://github.com/akheron/jansson.git \
   && make \
   && make install
 
-# TODO: get the installed dserv to locate packaged tcl at /work/package/usr/local/dserv/tcl
-# Possibly with LD_RUN_PATH='$ORIGIN/lib'
-# Or CMAKE_INSTALL_RPATH
 WORKDIR /work
 RUN git clone https://github.com/benjamin-heasly/dserv.git \
   && cd dserv \
@@ -47,16 +41,10 @@ RUN git clone https://github.com/benjamin-heasly/dserv.git \
 WORKDIR /work/package/usr/local/dlsh
 RUN wget https://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zip
 
-# TODO: I don't like installing dlsh twice: once for tests and once for package.
-# Point the tests at the package location?
-# Or will these end up being in separate jobs anyway?
-WORKDIR /work/dserv/build
-RUN mkdir /work/dserv/dlsh \
-  && cp /work/package/usr/local/dlsh/dlsh.zip /work/dserv/dlsh \
-  && ctest -VV --timeout 10 ..
-
 WORKDIR /work/package/DEBIAN
 RUN cp /work/dserv/dpkg/control . \
+  && cp /work/dserv/dpkg/postinst . \
+  && chmod +x ./postinst \
   && cp /work/dserv/dpkg/install-dserv-service.sh . \
   && chmod +x ./install-dserv-service.sh
 
@@ -78,3 +66,5 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 # docker run --rm -ti dserv:local /bin/sh -c 'echo "test" | essctrl && cat history.txt'
 # docker run --rm -ti dserv:local /usr/local/dserv/dserv --help
 # timeout -k 3 2 docker run --rm -ti dserv:local /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
+# docker run --rm -ti dserv:local /bin/sh ls -alth /usr/local/
+# docker run --rm -ti dserv:local /bin/sh ls -alth /usr/local/dserv/db
