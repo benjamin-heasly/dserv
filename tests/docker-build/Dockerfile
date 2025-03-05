@@ -40,7 +40,7 @@ RUN git clone https://github.com/benjamin-heasly/dserv.git \
 
 RUN export DEBIAN_FRONTEND=noninteractive \
   && apt update \
-  && apt install --no-install-recommends --yes libpango1.0-dev libwayland-dev wayland-protocols libxkbcommon-dev libxinerama-dev libdbus-1-dev libglew-dev  libdecor-0-dev libgtk-3-dev liblz4-dev libhpdf-dev \
+  && apt install --no-install-recommends --yes libpango1.0-dev libwayland-dev wayland-protocols libxkbcommon-dev libxinerama-dev libdbus-1-dev libglew-dev  libdecor-0-dev libgtk-3-dev liblz4-dev \
   && apt-get clean \
   && apt-get autoremove \
   && rm -rf /var/lib/apt/lists/*
@@ -50,6 +50,14 @@ RUN git clone https://github.com/fltk/fltk.git \
   && cd fltk \
   && git checkout release-1.4.2 \
   && cmake -B build \
+  && cmake --build build \
+  && cmake --install build
+
+WORKDIR /work
+RUN git clone https://github.com/libharu/libharu.git \
+  && cd libharu \
+  && git checkout v2.4.4 \
+  && cmake -DBUILD_SHARED_LIBS=OFF -B build \
   && cmake --build build \
   && cmake --install build
 
