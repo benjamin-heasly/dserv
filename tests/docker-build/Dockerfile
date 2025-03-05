@@ -38,6 +38,7 @@ RUN git clone https://github.com/benjamin-heasly/dserv.git \
   && cmake --build . \
   && cmake --install .
 
+# Move to above?
 RUN export DEBIAN_FRONTEND=noninteractive \
   && apt update \
   && apt install --no-install-recommends --yes libpango1.0-dev libwayland-dev wayland-protocols libxkbcommon-dev libxinerama-dev libdbus-1-dev libglew-dev  libdecor-0-dev libgtk-3-dev liblz4-dev \
@@ -45,6 +46,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
   && apt-get autoremove \
   && rm -rf /var/lib/apt/lists/*
 
+# It seemed we needed this full install of latest version, with fluid, rather than the 1.3 package on the index.
 WORKDIR /work
 RUN git clone https://github.com/fltk/fltk.git \
   && cd fltk \
@@ -53,21 +55,30 @@ RUN git clone https://github.com/fltk/fltk.git \
   && cmake --build build \
   && cmake --install build
 
+# dlsh wanted to link to the .so, but essgui wanted to link to the .a
+# I'm confused about why -- maybe because we build both dlsh.so and dlsh-static.a.
+# Could make a dlsh option, similar to haru?
 WORKDIR /work
 RUN git clone https://github.com/libharu/libharu.git \
   && cd libharu \
   && git checkout v2.4.4 \
   && cmake -DBUILD_SHARED_LIBS=OFF -B build \
   && cmake --build build \
+  && cmake --install build \
+  && cmake -DBUILD_SHARED_LIBS=ON -B build \
+  && cmake --build build \
   && cmake --install build
 
+# dlsh installs to a weird place, could change that to default.
 WORKDIR /work
 RUN git clone https://github.com/SheinbergLab/dlsh \
   && cd dlsh \
   && cmake -B build \
   && cmake --build build \
-  && cmake --install build
+  && cmake --install build \
+  && cp /work/dlsh/build/libdlsh-static.a /usr/local/lib
 
+# essgui only installs on mac, could add a linux install alongside essctrl?
 WORKDIR /work/dserv/tools/essgui
 RUN mkdir build \
   && cd build/ \
@@ -75,6 +86,8 @@ RUN mkdir build \
   && cmake --build . \
   && cmake --install .
 
+# I'm unclear how this zip should relate to the dlsh we actually built, above.
+# The zip contains tcl files from dlsh/lib, for one.
 WORKDIR /work/package/usr/local/dlsh
 RUN wget https://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zip
 
@@ -105,3 +118,6 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 # docker run --rm -ti dserv:local timeout --signal SIGINT 2 /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
 # docker run --rm -ti dserv:local ls -alth /usr/local/bin
 # docker run --rm -ti dserv:local ls -alth /usr/local/dserv/db
+
+# essgui came up!
+# docker run -u $UID -v /home/ninjaben/.Xauthority:/.Xauthoruty -e XAUTHORITY=/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY --net=host --rm -ti dserv:local
