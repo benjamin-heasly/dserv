@@ -54,16 +54,15 @@ endif()
 if(WIN32)
 
 elseif(APPLE)
-
-INSTALL(TARGETS essgui
-        RUNTIME DESTINATION . COMPONENT essgui
-)
-include(InstallRequiredSystemLibraries)
-set(CPACK_COMPONENTS_ALL essgui)
-set(CPACK_PACKAGE_VERSION_MAJOR "${dserv_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${dserv_VERSION_MINOR}")
-set(CPACK_GENERATOR "DragNDrop")
-include(CPack)
+  INSTALL(TARGETS essgui
+          RUNTIME DESTINATION . COMPONENT essgui
+  )
+  include(InstallRequiredSystemLibraries)
+  set(CPACK_COMPONENTS_ALL essgui)
+  set(CPACK_PACKAGE_VERSION_MAJOR "${dserv_VERSION_MAJOR}")
+  set(CPACK_PACKAGE_VERSION_MINOR "${dserv_VERSION_MINOR}")
+  set(CPACK_GENERATOR "DragNDrop")
+  include(CPack)
 else()
-
+  INSTALL(TARGETS essgui RUNTIME)
 endif()
