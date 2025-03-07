@@ -1,10 +1,13 @@
 # dserv
 
-This repo uses GitHub Actions to build dserv whenever we push a new repo tag.
+This repo uses GitHub Actions to build and test dserv whenever we push changes to this repo.
+It also uses Actions to build and release dserv whenever we push a repository tag.
 The workflow might go like this:
 
  - Make changes locally.
  - Commit and push changes to this repo.
+ - Follow build and test progress at the repo [Actions tab](https://github.com/benjamin-heasly/dserv/actions).
+ - Confirm tests are passing.
  - Create a new tag locally.
    - The tag name should be a version number, like `0.0.1`.
    - `git tag --list`
@@ -14,5 +17,4 @@ The workflow might go like this:
    - `git push --tags`
  - When the new tag is pused to GitHub, GitHub Actions will kick off a new build and release.
  - See workflow definition(s) like [package_and_release.yml](./.github/workflows/package_and_release.yml).
- - Follow workflow progress at the repo [Actions tab](https://github.com/benjamin-heasly/dserv/actions).
  - See completed releases and build artifacts at the repo [Releases](https://github.com/benjamin-heasly/dserv/releases).
