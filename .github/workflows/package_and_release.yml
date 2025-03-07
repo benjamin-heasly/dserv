@@ -60,7 +60,7 @@ jobs:
 
       - name: Install libharu PDF library into the build environment.
         run: |
-          git clone clone https://github.com/libharu/libharu.git
+          git clone https://github.com/libharu/libharu.git
           cd libharu/
           git checkout checkout v2.4.4
           cmake -DBUILD_SHARED_LIBS=OFF -B build
