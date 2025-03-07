@@ -62,7 +62,7 @@ jobs:
         run: |
           git clone https://github.com/libharu/libharu.git
           cd libharu/
-          git checkout checkout v2.4.4
+          git checkout v2.4.4
           cmake -DBUILD_SHARED_LIBS=OFF -B build
           cmake --build build
           sudo cmake --install build
