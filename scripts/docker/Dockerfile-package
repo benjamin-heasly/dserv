@@ -1,4 +1,19 @@
-# This runs in an Ubuntu environment.
+# This Dockerfile was helpful for building and packaging dserv, essctrl, essgui, and TCL 9.
+# Docker gives a clean environment, meaning the steps below must account for all dependencies.
+# Docker also gives us a local environment that's easy to iterate on.
+# Getting this working was the basis for the automated CI builds, over in .github/workflows/.
+#
+# To run this docker build and produce a Docker image, cd to the dserv repo root and:
+#
+#   docker build . -f scripts/docker/Dockerfile-package -t dserv-package:local
+#
+# To grab the generated .deb package out of a container from this image:
+#
+#   docker run --rm -ti -v $PWD:$PWD dserv-package:local cp /work/dserv-test.deb $PWD
+#
+# To test package installation and running programs, see scripts/docker/Dockerfile-run.
+
+# Start with a fresh Ubuntu environment.
 FROM ubuntu:22.04
 
 # Install build tools, dserv build dependencies, and essgui build dependencies.
@@ -11,18 +26,18 @@ RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/*
 
-# Install TLC 9 into the build environment and to a dserv packaging dir.
+# Install TLC 9 into the build environment, and to a packaging dir.
 WORKDIR /work
 RUN git clone --depth=1 --branch core-9-0-1-rc https://github.com/tcltk/tcl.git \
   && cd tcl/unix/ \
-  && ./configure --prefix=/work/package/usr/local/dserv/tcl/ \
+  && ./configure --prefix=/work/package/usr/local/ \
   && make \
   && make install \
   && ./configure \
   && make \
   && make install
 
-# Install Jansson into the build environment.
+# Install Jansson JSON library into the build environment.
 WORKDIR /work
 RUN git clone https://github.com/akheron/jansson.git \
   && cd jansson/ \
@@ -31,7 +46,7 @@ RUN git clone https://github.com/akheron/jansson.git \
   && cmake --build build \
   && cmake --install build
 
-# Install FLTK into the build environment.
+# Install FLTK GUI framework into the build environment.
 WORKDIR /work
 RUN git clone https://github.com/fltk/fltk.git \
   && cd fltk \
@@ -40,7 +55,7 @@ RUN git clone https://github.com/fltk/fltk.git \
   && cmake --build build \
   && cmake --install build  
 
-# Install the libharu PDF dependency.
+# Install libhary PDF library into the build environment.
 WORKDIR /work
 RUN git clone https://github.com/libharu/libharu.git \
   && cd libharu \
@@ -58,7 +73,7 @@ RUN wget https://github.com/benjamin-heasly/dlsh/releases/download/$DLSH_VERSION
   && cp ./lib/*.so /usr/local/lib \
   && cp ./include/*.h /usr/local/include
 
-# Install our dlsh utils and thier dependencies into the packaging dir.
+# Install our dlsh TCL utils and thier dependencies into the packaging dir.
 WORKDIR /work/package/usr/local/dlsh
 RUN wget https://github.com/benjamin-heasly/dlsh/releases/download/initial/dlsh.zip
 
@@ -71,13 +86,11 @@ RUN cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local -B build \
 
 # Build essgui itself and install to the packaging dir.
 WORKDIR /work/dserv/tools/essgui
-RUN mkdir build \
-  && cd build/ \
-  && cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local .. \
-  && cmake --build . \
-  && cmake --install .
+RUN cmake -DCMAKE_INSTALL_PREFIX=/work/package/usr/local -B build \
+  && cmake --build build \
+  && cmake --install build
 
-# Add metadata and scripts to include in a .deb package.
+# Add metadata and scripts for the .deb package.
 WORKDIR /work/package/DEBIAN
 RUN cp /work/dserv/dpkg/control . \
   && echo "Version: 0.0.test" >> ./control \
@@ -90,23 +103,3 @@ RUN cp /work/dserv/dpkg/control . \
 # Build the .deb package.
 WORKDIR /work
 RUN dpkg-deb --build /work/package dserv-test.deb
-
-# As a sanity check, install the same .deb package.
-WORKDIR /work
-RUN export DEBIAN_FRONTEND=noninteractive \
-&& apt update \
-&& apt install --no-install-recommends --yes ./dserv-test.deb \
-&& apt-get clean \
-&& apt-get autoremove \
-&& rm -rf /var/lib/apt/lists/*
-
-# docker build . -t dserv:local
-
-# docker run --rm -ti dserv:local /bin/sh -c 'echo "test" | essctrl && cat history.txt'
-# docker run --rm -ti dserv:local /usr/local/dserv/dserv --help
-# docker run --rm -ti dserv:local timeout --signal SIGINT 2 /usr/local/dserv/dserv -c /usr/local/dserv/config/dsconf.tcl -t /usr/local/dserv/config/triggers.tcl
-# docker run --rm -ti dserv:local ls -alth /usr/local/bin
-# docker run --rm -ti dserv:local ls -alth /usr/local/dserv/db
-
-# docker run -u $UID -v /home/ninjaben/.Xauthority:/.Xauthoruty -e XAUTHORITY=/.Xauthority -v /tmp/.X11-unix:/tmp/.X11-unix -e DISPLAY --net=host --rm -ti dserv:local essgui
-# essgui came up!
