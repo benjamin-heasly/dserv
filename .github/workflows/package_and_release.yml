@@ -72,10 +72,10 @@ jobs:
         run: |
           DLSH_VERSION=0.0.13
           wget https://github.com/benjamin-heasly/dlsh/releases/download/$DLSH_VERSION/dlsh-Linux-$(dpkg --print-architecture)-$DLSH_VERSION.zip
-          unzip dlsh-Linux-$(dpkg --print-architecture)-$DLSH_VERSION.zip \
-          cp ./lib/*.a /usr/local/lib
-          cp ./lib/*.so /usr/local/lib
-          cp ./include/*.h /usr/local/include
+          unzip dlsh-Linux-$(dpkg --print-architecture)-$DLSH_VERSION.zip
+          sudo cp ./lib/*.a /usr/local/lib
+          sudo cp ./lib/*.so /usr/local/lib
+          sudo cp ./include/*.h /usr/local/include
 
       # TODO: obtain dlsh from SheinbergLab with a version, not from benjamin-heasly with "initial"
       - name: Install our dlsh TCL utils and thier dependencies into the packaging dir.
@@ -89,25 +89,25 @@ jobs:
 
       - name: Install dserv into the packaging dir.
         run: |
-          cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local/ -B build \
+          cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local/ -B build
           cmake --build build
           cmake --install build
 
       - name: Install essgui into the packaging dir.
         run: |
           cd tools/essgui
-          cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local -B build \
-          cmake --build build \
+          cmake -DCMAKE_INSTALL_PREFIX=/tmp/package/usr/local -B build
+          cmake --build build
           cmake --install build
 
       - name: Add metadata and scripts for the .deb package.
         run: |
           mkdir -p /tmp/package/DEBIAN
-          cp dpkg/control /tmp/package/DEBIAN/ \
+          cp dpkg/control /tmp/package/DEBIAN/
           echo "Version: ${{ github.ref_name }}" >> /tmp/package/DEBIAN/control
           echo "Architecture: $(dpkg --print-architecture)" >> /tmp/package/DEBIAN/control
-          cp dpkg/postinst /tmp/package/DEBIAN/ \
-          chmod +x /tmp/package/DEBIAN/postinst \
+          cp dpkg/postinst /tmp/package/DEBIAN/
+          chmod +x /tmp/package/DEBIAN/postinst
           cp dpkg/install-dserv-service.sh /tmp/package/usr/local/bin/
           chmod +x /tmp/package/usr/local/bin/install-dserv-service.sh
 
